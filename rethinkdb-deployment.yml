@@ -1,0 +1,32 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: rethinkdb1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        role: rethinkdb
+    spec:
+      containers:
+      - name: rethinkdb1
+        image: rethinkdb
+        tty: true
+        stdin: true
+        ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rethinkdb1
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  type: NodePort
+  selector:
+    role: rethinkdb

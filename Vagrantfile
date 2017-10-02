@@ -11,34 +11,36 @@ Vagrant.configure("2") do |config|
         sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         sudo apt update
         sudo apt install -y docker-ce
+      else
+        echo "docker already installed."
       fi
     }
   
     # No package for Ubuntu Zesty yet
     install_kubeadm = %Q{
       if [ ! $(which kubeadm) ]; then
-        sudo swapoff -a
-        sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-        sudo apt update
+        sudo swapoff -a # kublet service complains if memory swap is enabled
         curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
         sudo add-apt-repository "deb http://apt.kubernetes.io/ kubernetes-xenial-unstable main"
-        apt update
-        sudo swapoff -a # necessary or starting kubelet will fail with message about needing to disable swap
+        sudo apt update
         apt install -y kubeadm
-        sudo apt update && sudo apt upgrade -y
-        sudo iptables -P FORWARD ACCEPT
+        sudo apt update 
+        sudo apt upgrade -y
+        sudo iptables -P FORWARD ACCEPT # allow access to nodePorts
+      else
+        echo "kubeadm already installed."
       fi
     }
 
     # Run this on the master node manually
-    configure_kubernetes = %Q{
-      sudo kubeadm init --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16
-      mkdir -p $HOME/.kube
-      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-      sudo chown $(id -u):$(id -g) $HOME/.kube/config
-      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel.yml
-      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel-rbac.yml
-      sudo kubeadm token list
+    configure_master_node = %Q{
+        sudo kubeadm init --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16
+        mkdir -p $HOME/.kube
+        sudo cp -f -i /etc/kubernetes/admin.conf $HOME/.kube/config
+        sudo chown $(id -u):$(id -g) $HOME/.kube/config
+        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel.yml
+        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel-rbac.yml
+        sudo kubeadm token list
     }
 
     # Run on the other nodes:
