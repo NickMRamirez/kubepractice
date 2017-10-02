@@ -1,8 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-
-
 Vagrant.configure("2") do |config|
   
     install_docker = %Q{
@@ -28,7 +26,7 @@ Vagrant.configure("2") do |config|
         sudo swapoff -a # necessary or starting kubelet will fail with message about needing to disable swap
         apt install -y kubeadm
         sudo apt update && sudo apt upgrade -y
-        sudo iptables -A INPUT -p tcp --match multiport --dports 30000:32767 -j ACCEPT # open nodeports
+        sudo iptables -P FORWARD ACCEPT
       fi
     }
 
