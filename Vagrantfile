@@ -2,9 +2,14 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
+
+    disable_apache = %Q{
+      sudo update-rc.d -f apache2 remove && sudo systemctl stop apache2
+    }
   
     install_docker = %Q{
       if [ ! $(which docker) ]; then
+        echo "----Installing docker----"
         sudo apt update
         sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
@@ -19,45 +24,79 @@ Vagrant.configure("2") do |config|
     # No package for Ubuntu Zesty yet
     install_kubeadm = %Q{
       if [ ! $(which kubeadm) ]; then
+        echo "----Installing kubeadm----"
         sudo swapoff -a # kublet service complains if memory swap is enabled
-        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+        curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
         sudo add-apt-repository "deb http://apt.kubernetes.io/ kubernetes-xenial-unstable main"
         sudo apt update
-        apt install -y kubeadm
-        sudo apt update 
-        sudo apt upgrade -y
+        sudo apt install -y kubeadm
         sudo iptables -P FORWARD ACCEPT # allow access to nodePorts
       else
         echo "kubeadm already installed."
       fi
     }
 
-    # Run this on the master node manually
     configure_master_node = %Q{
-        sudo kubeadm init --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16
-        mkdir -p $HOME/.kube
+      if [ ! -d /home/vagrant/.kube/ ]; then
+        echo "----Initializing with kubeadm----"
+        sudo kubeadm init --token db1e3e.5044869ec5bc2393 --apiserver-advertise-address 172.28.128.3 --apiserver-cert-extra-sans=172.28.128.3 --pod-network-cidr=10.244.0.0/16
+        sudo mkdir -p $HOME/.kube
         sudo cp -f -i /etc/kubernetes/admin.conf $HOME/.kube/config
         sudo chown $(id -u):$(id -g) $HOME/.kube/config
-        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel.yml
-        kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel-rbac.yml
-        sudo kubeadm token list
+      else
+        echo "kubeadm already initialized"
+      fi
     }
 
-    # Run on the other nodes:
+    install_flannel = %Q{
+      echo "----Installing flannel network pods----"
+      whoami
+      sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel.yml
+      sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel-rbac.yml
+    }
+
+    configure_worker_node = %Q{
+      echo "----Configuring worker node----"
+      sudo kubeadm join --token db1e3e.5044869ec5bc2393 172.28.128.3:6443
+      sudo mkdir -p $HOME/.kube
+      sudo cp -f -i /etc/kubernetes/kubelet.conf $HOME/.kube/config
+      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+    }
+
+    # Run this on this VM:
+    # sudo kubeadm token list
+    config.vm.define "master1" do |node|
+      node.vm.box = "silverhighway/zesty64"
+      node.vm.hostname = "master1"
+      node.vm.network "private_network", type: "dhcp"
+      node.vm.provider :virtualbox do |vb|
+        vb.customize ['modifyvm', :id, '--memory', '2048']
+      end
+
+      node.vm.provision "shell", inline: disable_apache
+      node.vm.provision "shell", inline: install_docker
+      node.vm.provision "shell", inline: install_kubeadm
+      node.vm.provision "shell", inline: configure_master_node
+      node.vm.provision "shell", inline: install_flannel
+    end
+
+    # Run this on these VMs:
     # sudo kubeadm join --token [token] 172.28.128.3:6443
+    worker_nodes = 1
   
-    number_of_hosts = 2
-  
-    (1..number_of_hosts).each do |num|
-      config.vm.define "host#{num}" do |node|
+    (1..worker_nodes).each do |num|
+      config.vm.define "worker#{num}" do |node|
         node.vm.box = "silverhighway/zesty64"
-        node.vm.hostname = "host#{num}"
+        node.vm.hostname = "worker#{num}"
         node.vm.network "private_network", type: "dhcp"
         node.vm.provider :virtualbox do |vb|
           vb.customize ['modifyvm', :id, '--memory', '2048']
         end
+
+        node.vm.provision "shell", inline: disable_apache
         node.vm.provision "shell", inline: install_docker
         node.vm.provision "shell", inline: install_kubeadm
+        node.vm.provision "shell", inline: configure_worker_node
       end
     end
   end
