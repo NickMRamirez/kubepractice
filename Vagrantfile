@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
     configure_master_node = %Q{
       if [ ! -d /home/vagrant/.kube/ ]; then
         echo "----Initializing with kubeadm----"
-        sudo kubeadm init --token db1e3e.5044869ec5bc2393 --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16
+        sudo kubeadm init --token db1e3e.5044869ec5bc2393 --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16 
 
         sudo mkdir -p $HOME/.kube
         sudo cp -f -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -49,7 +49,8 @@ Vagrant.configure("2") do |config|
         sudo cp -f -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
         sudo chown vagrant:vagrant /home/vagrant/.kube/config
 
-        # kubectl taint nodes --all node-role.kubernetes.io/master-
+        kubectl taint nodes --all node-role.kubernetes.io/master-
+        kubectl create -f /vagrant/rbac.yml
       else
         echo "kubeadm already initialized"
       fi
