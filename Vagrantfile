@@ -39,28 +39,33 @@ Vagrant.configure("2") do |config|
     configure_master_node = %Q{
       if [ ! -d /home/vagrant/.kube/ ]; then
         echo "----Initializing with kubeadm----"
-        sudo kubeadm init --token db1e3e.5044869ec5bc2393 --apiserver-advertise-address 172.28.128.3 --apiserver-cert-extra-sans=172.28.128.3 --pod-network-cidr=10.244.0.0/16
+        sudo kubeadm init --token db1e3e.5044869ec5bc2393 --apiserver-advertise-address 172.28.128.3 --pod-network-cidr=10.244.0.0/16
+
         sudo mkdir -p $HOME/.kube
         sudo cp -f -i /etc/kubernetes/admin.conf $HOME/.kube/config
         sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+        sudo mkdir -p /home/vagrant/.kube
+        sudo cp -f -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+        sudo chown vagrant:vagrant /home/vagrant/.kube/config
+
+        # kubectl taint nodes --all node-role.kubernetes.io/master-
       else
         echo "kubeadm already initialized"
       fi
     }
 
     install_flannel = %Q{
-      echo "----Installing flannel network pods----"
-      whoami
-      sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel.yml
-      sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.8.0/Documentation/kube-flannel-rbac.yml
+      kubectl apply -f https://git.io/weave-kube-1.6
     }
 
     configure_worker_node = %Q{
       echo "----Configuring worker node----"
       sudo kubeadm join --token db1e3e.5044869ec5bc2393 172.28.128.3:6443
-      sudo mkdir -p $HOME/.kube
-      sudo cp -f -i /etc/kubernetes/kubelet.conf $HOME/.kube/config
-      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+      sudo mkdir -p /home/vagrant/.kube
+      sudo cp -f -i /etc/kubernetes/kubelet.conf /home/vagrant/.kube/config
+      sudo chown vagrant:vagrant /home/vagrant/.kube/config
     }
 
     # Run this on this VM:
