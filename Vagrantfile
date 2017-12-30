@@ -61,7 +61,7 @@ Vagrant.configure("2") do |config|
 
   configure_worker_node = %Q{
     echo "----Configuring worker node----"
-    sudo kubeadm join --token db1e3e.5044869ec5bc2393 #{master_ip}:6443
+    sudo kubeadm join --token db1e3e.5044869ec5bc2393 #{master_ip}:6443 --discovery-token-unsafe-skip-ca-verification
   }
 
   config.vm.define "master1" do |node|
