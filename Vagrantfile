@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
     if [ ! $(which docker) ]; then
       echo "----Installing docker----"
       sudo apt update
-      sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+      sudo apt install -y ifupdown apt-transport-https ca-certificates curl software-properties-common
       curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
       sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
       sudo apt update
@@ -65,7 +65,7 @@ Vagrant.configure("2") do |config|
   }
 
   config.vm.define "master1" do |node|
-    node.vm.box = "silverhighway/zesty64"
+    node.vm.box = "ubuntu/xenial64"
     node.vm.hostname = "master1"
     node.vm.network "private_network", ip: master_ip
     node.vm.provider :virtualbox do |vb|
@@ -81,7 +81,7 @@ Vagrant.configure("2") do |config|
 
   (1..worker_nodes).each do |num|
     config.vm.define "worker#{num}" do |node|
-      node.vm.box = "silverhighway/zesty64"
+      node.vm.box = "ubuntu/xenial64"
       node.vm.hostname = "worker#{num}"
       node.vm.network "private_network", ip: "192.168.2.#{2 + num}"
       node.vm.provider :virtualbox do |vb|
@@ -94,6 +94,7 @@ Vagrant.configure("2") do |config|
       node.vm.provision "shell", inline: install_kubeadm
       node.vm.provision "shell", inline: configure_worker_node
     end
+
   end
-  end
+end
   

@@ -1,4 +1,19 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-settings
+  namespace: default
+data:
+  mydata1: |-
+    setting1: lala
+    setting2: yadayada
+  myxml: |-
+    <?xml version="1.0">
+    <appSettings>
+      <add key="mySetting" value="blah" />
+    </appSettings>
+---
 apiVersion: apps/v1beta2
 kind: Deployment # what kind of manifest this is
 metadata:
@@ -17,9 +32,21 @@ spec: # sets the desired state of what we want
     spec: # the details about how to create the pod
       containers:
         - name: nginx # name of the pod
-          image: nginx:1.7.9 # Docker image to pull
+          image: nginx:latest # Docker image to pull
           ports:
             - containerPort: 80 # open port 80 on the pod
+          volumeMounts:
+            - mountPath: /etc/nginx/settings
+              name: nginx-settings
+      volumes:
+        - name: nginx-settings
+          configMap:
+            name: nginx-settings
+            items:
+              - key: mydata1
+                path: settings.yml
+              - key: myxml
+                path: web.config
 ---
 apiVersion: v1
 kind: Service
