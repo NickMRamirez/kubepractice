@@ -1,2 +1,4 @@
 .vagrant
 ubuntu-xenial*
+ca.key
+ca.crt

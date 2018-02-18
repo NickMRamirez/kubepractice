@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
 
       echo "----Installing kubeadm----"
       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-      sudo add-apt-repository "deb http://apt.kubernetes.io/ kubernetes-xenial-unstable main"
+      sudo add-apt-repository "deb http://apt.kubernetes.io/ kubernetes-xenial main"
       sudo apt update
       sudo apt install -y kubeadm
     fi
@@ -52,10 +52,13 @@ Vagrant.configure("2") do |config|
       sudo cp -f /etc/kubernetes/admin.conf /home/vagrant/.kube/config
       sudo chown vagrant:vagrant /home/vagrant/.kube/config
 
-      kubectl taint nodes --all node-role.kubernetes.io/master-
       kubectl create -f /vagrant/rbac.yml
 
-      kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.0/Documentation/kube-flannel.yml
+      # Use kube-flannel.yml modified to work with Vagrant
+      kubectl apply -f /vagrant/kube-flannel.yml
+
+      # Copying client cert and key to vagrant shared folder
+      sudo cp /etc/kubernetes/pki/ca.* /vagrant
     fi
   }
 

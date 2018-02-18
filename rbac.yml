@@ -1,33 +1,45 @@
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRoleBinding
+# metadata:
+#   name: worker-admin
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: cluster-admin
+# subjects:
+# - kind: User
+#   name: "system:node:worker1"
+# ---
+# kind: ClusterRole
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: kube-system-admin
+# rules:
+#   - apiGroups: ["*"]
+#     resources: ["*"]
+#     verbs: ["*"]
+# ---
+# kind: ClusterRoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: kube-system-service-account-role-binding
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: kube-system-admin
+# subjects:
+#   - kind: ServiceAccount
+#     name: default
+#     namespace: kube-system
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: worker-admin
+  name: basic-admin
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
 subjects:
-- kind: User
-  name: "system:node:worker1"
----
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: kube-system-admin
-rules:
-  - apiGroups: ["*"]
-    resources: ["*"]
-    verbs: ["*"]
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: kube-system-service-account-role-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: kube-system-admin
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: kube-system
+  - kind: User
+    name: "kubernetes"
