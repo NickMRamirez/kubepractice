@@ -76,6 +76,7 @@ Vagrant.configure("2") do |config|
     end
 
     node.vm.provision :shell, inline: "sed 's/127\.0\.0\.1.*master.*/192\.168\.2\.2 master1/' -i /etc/hosts"
+    node.vm.provision :shell, inline: "sed 's/127\.0\.1\.1.*master.*/192\.168\.2\.2 master1/' -i /etc/hosts"
     node.vm.provision "shell", inline: vm_prereqs
     node.vm.provision "shell", inline: install_docker
     node.vm.provision "shell", inline: install_kubeadm
@@ -92,6 +93,7 @@ Vagrant.configure("2") do |config|
       end
 
       node.vm.provision :shell, inline: "sed 's/127\.0\.0\.1.*worker.*/192\.168\.2\.#{2 + num} worker#{num}/' -i /etc/hosts"
+      node.vm.provision :shell, inline: "sed 's/127\.0\.1\.1.*worker.*/192\.168\.2\.#{2 + num} worker#{num}/' -i /etc/hosts"
       node.vm.provision "shell", inline: vm_prereqs
       node.vm.provision "shell", inline: install_docker
       node.vm.provision "shell", inline: install_kubeadm
